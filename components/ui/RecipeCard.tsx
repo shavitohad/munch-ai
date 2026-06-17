@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import StarRating from './StarRating'
 import { isFavourite, saveFavourite, removeFavourite, getRating, setRating } from '@/lib/storage'
 import type { Recipe } from '@/types/recipe'
@@ -17,6 +19,8 @@ type Props = {
 }
 
 export default function RecipeCard({ recipe, index }: Props) {
+  const { isSignedIn } = useAuth()
+  const router = useRouter()
   const [fav, setFav] = useState(false)
   const [rating, setRatingState] = useState<number | undefined>()
   const [expanded, setExpanded] = useState(false)
@@ -27,6 +31,10 @@ export default function RecipeCard({ recipe, index }: Props) {
   }, [recipe.id])
 
   function toggleFav() {
+    if (!isSignedIn) {
+      router.push('/sign-in')
+      return
+    }
     if (fav) {
       removeFavourite(recipe.id)
       setFav(false)

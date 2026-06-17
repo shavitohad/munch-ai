@@ -1,3 +1,4 @@
+import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import type { Metadata } from 'next'
 import { Rubik } from 'next/font/google'
 import Link from 'next/link'
@@ -14,20 +15,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl" className={rubik.className}>
       <body className="bg-gray-50 text-gray-900 antialiased">
-        <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white shadow-sm">
-          <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-            <Link
-              href="/favourites"
-              className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-[#009DE0] hover:text-[#009DE0]"
-            >
-              המועדפים שלי
-            </Link>
-            <Link href="/" className="text-2xl font-bold text-[#009DE0]">
-              מנץ׳
-            </Link>
-          </div>
-        </nav>
-        {children}
+        <ClerkProvider>
+          <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white shadow-sm">
+            <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+              <Link href="/" className="text-2xl font-bold text-[#009DE0]">
+                מנץ׳
+              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/favourites"
+                  className="rounded-full border border-gray-200 px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-[#009DE0] hover:text-[#009DE0]"
+                >
+                  המועדפים שלי
+                </Link>
+                <Show when="signed-out">
+                  <SignInButton mode="modal">
+                    <button className="rounded-full bg-[#009DE0] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#0089c5]">
+                      כניסה
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="rounded-full border border-[#009DE0] px-4 py-1.5 text-sm font-medium text-[#009DE0] transition-colors hover:bg-[#009DE0] hover:text-white">
+                      הרשמה
+                    </button>
+                  </SignUpButton>
+                </Show>
+                <Show when="signed-in">
+                  <UserButton />
+                </Show>
+              </div>
+            </div>
+          </nav>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   )
