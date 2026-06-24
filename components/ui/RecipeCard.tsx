@@ -19,43 +19,49 @@ type Props = {
 }
 
 export default function RecipeCard({ recipe, index }: Props) {
-  const { isSignedIn } = useAuth()
+  const { isSignedIn, userId } = useAuth()
   const router = useRouter()
   const [fav, setFav] = useState(false)
   const [rating, setRatingState] = useState<number | undefined>()
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
-    setFav(isFavourite(recipe.id))
-    setRatingState(getRating(recipe.id))
-  }, [recipe.id])
+    async function loadState() {
+      setFav(await isFavourite(recipe.id, userId))
+      setRatingState(await getRating(recipe.id, userId))
+    }
+    loadState()
+  }, [recipe.id, userId])
 
-  function toggleFav() {
+  async function toggleFav() {
     if (!isSignedIn) {
       router.push('/sign-in')
       return
     }
     if (fav) {
-      removeFavourite(recipe.id)
+      await removeFavourite(recipe.id, userId)
       setFav(false)
     } else {
-      saveFavourite({
-        id: recipe.id,
-        name: recipe.name,
-        description: recipe.description,
-        cuisine: recipe.cuisine,
-        ingredients: recipe.ingredients,
-        steps: recipe.steps,
-        prepTime: recipe.prepTime,
-        difficulty: recipe.difficulty,
-        savedAt: new Date().toISOString(),
-      })
+      await saveFavourite(
+        {
+          id: recipe.id,
+          name: recipe.name,
+          description: recipe.description,
+          cuisine: recipe.cuisine,
+          ingredients: recipe.ingredients,
+          steps: recipe.steps,
+          prepTime: recipe.prepTime,
+          difficulty: recipe.difficulty,
+          savedAt: new Date().toISOString(),
+        },
+        userId,
+      )
       setFav(true)
     }
   }
 
-  function handleRate(id: string, stars: number) {
-    setRating(id, stars)
+  async function handleRate(id: string, stars: number) {
+    await setRating(id, stars, userId)
     setRatingState(stars)
   }
 

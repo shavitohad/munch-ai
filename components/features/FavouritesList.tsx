@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@clerk/nextjs'
 import { getFavourites, removeFavourite, getRating, setRating } from '@/lib/storage'
 import StarRating from '@/components/ui/StarRating'
 import type { Favourite } from '@/types/recipe'
@@ -21,19 +22,20 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 type CardProps = {
   fav: Favourite
   index: number
+  userId: string | null | undefined
   onRemove: (id: string) => void
 }
 
-function FavCard({ fav, index, onRemove }: CardProps) {
+function FavCard({ fav, index, userId, onRemove }: CardProps) {
   const [expanded, setExpanded] = useState(false)
   const [rating, setRatingState] = useState<number | undefined>()
 
   useEffect(() => {
-    setRatingState(getRating(fav.id))
-  }, [fav.id])
+    getRating(fav.id, userId).then(setRatingState)
+  }, [fav.id, userId])
 
-  function handleRate(id: string, stars: number) {
-    setRating(id, stars)
+  async function handleRate(id: string, stars: number) {
+    await setRating(id, stars, userId)
     setRatingState(stars)
   }
 
@@ -52,7 +54,6 @@ function FavCard({ fav, index, onRemove }: CardProps) {
       </div>
 
       <div className="p-5">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-bold leading-tight text-gray-900">{fav.name}</h3>
           <button
@@ -67,7 +68,6 @@ function FavCard({ fav, index, onRemove }: CardProps) {
 
         <p className="mt-1 text-sm text-gray-500">{fav.description}</p>
 
-        {/* Meta row */}
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">
             ⏱ {fav.prepTime}
@@ -80,7 +80,6 @@ function FavCard({ fav, index, onRemove }: CardProps) {
           </span>
         </div>
 
-        {/* Ingredients */}
         <div className="mt-4">
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
             מצרכים
@@ -97,7 +96,6 @@ function FavCard({ fav, index, onRemove }: CardProps) {
           </div>
         </div>
 
-        {/* Steps toggle */}
         {fav.steps.length > 0 && (
           <button
             type="button"
@@ -118,7 +116,6 @@ function FavCard({ fav, index, onRemove }: CardProps) {
           </ol>
         )}
 
-        {/* Rating + saved date */}
         <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
           <span className="text-xs text-gray-400">נשמר ב־{savedDate}</span>
           <StarRating recipeId={fav.id} initial={rating} onRate={handleRate} />
@@ -129,16 +126,19 @@ function FavCard({ fav, index, onRemove }: CardProps) {
 }
 
 export default function FavouritesList() {
+  const { userId } = useAuth()
   const [favourites, setFavourites] = useState<Favourite[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    setFavourites(getFavourites())
-    setLoaded(true)
-  }, [])
+    getFavourites(userId).then((favs) => {
+      setFavourites(favs)
+      setLoaded(true)
+    })
+  }, [userId])
 
-  function handleRemove(id: string) {
-    removeFavourite(id)
+  async function handleRemove(id: string) {
+    await removeFavourite(id, userId)
     setFavourites((prev) => prev.filter((f) => f.id !== id))
   }
 
@@ -165,7 +165,7 @@ export default function FavouritesList() {
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {favourites.map((fav, i) => (
-        <FavCard key={fav.id} fav={fav} index={i} onRemove={handleRemove} />
+        <FavCard key={fav.id} fav={fav} index={i} userId={userId} onRemove={handleRemove} />
       ))}
     </div>
   )
